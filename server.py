@@ -7,7 +7,7 @@ from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
 import schema
-from models import Session, User
+from models import Session, Ads
 
 app = flask.Flask("app")
 
@@ -39,65 +39,67 @@ def error_handler(er: HttpError):
     return response
 
 
-def get_user(session, user_id):
-    user = session.get(User, user_id)
-    if user is None:
+def get_ads(session, ads_id):
+    ads = session.get(Ads, ads_id)
+    if ads is None:
         raise HttpError(404, "usr not found")
-    return user
+    return ads
 
 
-class UserView(MethodView):
-    def get(self, user_id):
+class AdsView(MethodView):
+    def get(self, ads_id):
         with Session() as session:
-            user = get_user(session, user_id)
+            ads = get_ads(session, ads_id)
             return jsonify(
                 {
-                    "id": user.id,
-                    "email": user.email,
-                    "creation_time": user.creation_time.isoformat(),
+                    "id": ads.id,
+                    "user": ads.user,
+                    "heading": ads.heading,
+                    "description": ads.description,
+                    "creation_time": ads.creation_time.isoformat(),
                 }
             )
 
     def post(self):
-        validated_json = validate(schema.CreateUser, request.json)
-        validated_json["password"] = hash_password(validated_json["password"])
+        validated_json = validate(schema.CreateAds, request.json)
+        # validated_json["password"] = hash_password(validated_json["password"])
         with Session() as session:
-            user = User(**validated_json)
-            session.add(user)
+            ads = Ads(**validated_json)
+            session.add(ads)
             try:
                 session.commit()
             except IntegrityError:
                 raise HttpError(409, "User already exists")
-            return jsonify({"id": user.id})
+            return jsonify({"id": ads.id})
 
-    def patch(self, user_id):
-        validated_json = validate(schema.UpdateUser, request.json)
-        if "password" in validated_json:
-            validated_json["password"] = hash_password(validated_json["password"])
+    def patch(self, ads_id):
+        validated_json = validate(schema.UpdateAds, request.json)
+        # if "password" in validated_json:
+        #     validated_json["password"] = hash_password(validated_json["password"])
         with Session() as session:
-            user = get_user(session, user_id)
+            ads = get_ads(session, ads_id)
             for field, value in validated_json.items():
-                setattr(user, field, value)
-            session.add(user)
+                setattr(ads, field, value)
+            session.add(ads)
             try:
                 session.commit()
             except IntegrityError:
                 raise HttpError(409, "User already exists")
-            return jsonify({"id": user.id})
+            return jsonify({"id": ads.id})
 
-    def delete(self, user_id):
+    def delete(self, ads_id):
         with Session() as session:
-            user = get_user(session, user_id)
-            session.delete(user)
+            ads = get_ads(session, ads_id)
+            session.delete(ads)
             session.commit()
             return jsonify({"status": "success"})
 
 
-user_view = UserView.as_view("users")
+ads_view = AdsView.as_view("adss")
 app.add_url_rule(
-    "/user/<int:user_id>", view_func=user_view, methods=["GET", "PATCH", "DELETE"]
+    "/ads/<int:ads_id>", view_func=ads_view, methods=["GET", "PATCH", "DELETE"]
 )
-app.add_url_rule("/user/", view_func=user_view, methods=["POST"])
+app.add_url_rule("/ads/", view_func=ads_view, methods=["POST"])
 
 if __name__ == "__main__":
     app.run()
