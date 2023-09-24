@@ -7,7 +7,7 @@ from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
 import schema
-from models import Session, Ads
+from models import Session, Ads, User
 
 app = flask.Flask("app")
 
@@ -62,7 +62,7 @@ class AdsView(MethodView):
 
     def post(self):
         validated_json = validate(schema.CreateAds, request.json)
-        # validated_json["password"] = hash_password(validated_json["password"])
+        validated_json["password"] = hash_password(validated_json["password"])
         with Session() as session:
             ads = Ads(**validated_json)
             session.add(ads)
@@ -74,8 +74,8 @@ class AdsView(MethodView):
 
     def patch(self, ads_id):
         validated_json = validate(schema.UpdateAds, request.json)
-        # if "password" in validated_json:
-        #     validated_json["password"] = hash_password(validated_json["password"])
+        if "password" in validated_json:
+            validated_json["password"] = hash_password(validated_json["password"])
         with Session() as session:
             ads = get_ads(session, ads_id)
             for field, value in validated_json.items():
