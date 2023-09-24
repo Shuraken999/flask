@@ -20,27 +20,26 @@ Session = sessionmaker(bind=engine)
 Base = declarative_base(bind=engine)
 
 
-# class User(Base):
-#     __tablename__ = "app_users"
-#
-#     id = Column(Integer, primary_key=True)
-#     email = Column(String, nullable=False, unique=True, index=True)
-#     password = Column(String, nullable=False)
-#     owner = Column(String, nullable=False)
-#     creation_time = Column(DateTime, server_default=func.now())
+class User(Base):
+    __tablename__ = "app_users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, nullable=False, unique=True, index=True)
+    password = Column(String, nullable=False)
+    owner = Column(String, nullable=False)
+    creation_time = Column(DateTime, server_default=func.now())
 
 
 class Ads(Base):
     __tablename__ = "ads"
 
     id = Column(Integer, primary_key=True)
-    user = Column(Integer, nullable=False, unique=True, index=True)
     heading = Column(String, nullable=False, unique=True, index=True)
     description = Column(String)
-    # user_id = Column(Integer, sq.ForeignKey("user.id"), nullable=False)
+    user_id = Column(Integer, sq.ForeignKey("user.id"), nullable=False)
     creation_time = Column(DateTime, server_default=func.now())
 
-    # user = relationship(User, backref="ads")
+    user = relationship(User, backref="ads")
 
 
 Base.metadata.create_all()
